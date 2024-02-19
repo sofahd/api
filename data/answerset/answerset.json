@@ -1,0 +1,48 @@
+{
+    "nginx": [
+        "server {",
+        "    listen 49123;",
+        "    location /get_pm10 {",
+        "        proxy_pass http://api_1:50005/get_pm10;",
+        "        proxy_set_header Content-Length 5;",
+        "        proxy_set_header Content-Type text/html; charset=utf-8;",
+        "        proxy_set_header Server waitress;",
+        "    }",
+        "    location /get_pm25 {",
+        "        proxy_pass http://api_1:50005/get_pm25;",
+        "        proxy_set_header Content-Length 4;",
+        "        proxy_set_header Content-Type text/html; charset=utf-8;",
+        "        proxy_set_header Server waitress;",
+        "    }",
+        "}"
+    ],
+    "endpoints": {
+        "/get_pm10": {
+            "num": 3,
+            "method": "GET",
+            "path": "/home/api/files/3.html",
+            "status_code": 200,
+            "headers": {
+                "Content-Length": "5",
+                "Content-Type": "text/html; charset=utf-8",
+                "Server": "waitress"
+            }
+        },
+        "/get_pm25": {
+            "num": 4,
+            "method": "GET",
+            "path": "/home/api/files/4.html",
+            "status_code": 200,
+            "headers": {
+                "Content-Length": "4",
+                "Content-Type": "text/html; charset=utf-8",
+                "Server": "waitress"
+            }
+        }
+    },
+    "placeholders": {
+        "<user>": "[a-z][a-z][a-z][a-z]",
+        "<host>": "[A-Z][A-Z][A-Z][0-9][0-9][A-Z]",
+        "<ip>": "foo"
+    }
+}
