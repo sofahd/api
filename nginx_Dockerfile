@@ -10,7 +10,7 @@ RUN apt-get update && \
 RUN rm /etc/nginx/sites-enabled/default
 
 # Add a new configuration file for Nginx as a reverse proxy
-COPY default.conf /etc/nginx/sites-available/default.conf
+COPY data/default.conf /etc/nginx/sites-available/default.conf
 
 # Create a symbolic link to enable the configuration
 RUN ln -s /etc/nginx/sites-available/default.conf /etc/nginx/sites-enabled/default.conf
