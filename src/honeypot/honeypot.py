@@ -119,15 +119,17 @@ class Honeypot:
                 processed_dict[placeholder] = get_own_ip(api_list=["https://api.seeip.org/","https://api.ipify.org/"], logger=self.logger)
             else:
                 processed_dict[placeholder] = self._create_value_from_regex(value)
+        try:
+            with open(endpoint_path, 'r') as file:
+                content = file.read()
 
-        with open(endpoint_path, 'r') as file:
-            content = file.read()
+            for placeholder, value in processed_dict.items():
+                content = content.replace(placeholder, value)
 
-        for placeholder, value in processed_dict.items():
-            content = content.replace(placeholder, value)
-
-        with open(endpoint_path, 'w') as file:
-            file.write(content)
+            with open(endpoint_path, 'w') as file:
+                file.write(content)
+        except Exception as e:
+            self.logger.warn(message=f"Error while replacing placeholders in {endpoint_path}", method="api.honeypot._randomize_endpoint", exception=e)
 
 
     def _create_value_from_regex(self, regex:str)->str:
