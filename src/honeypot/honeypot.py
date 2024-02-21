@@ -44,14 +44,17 @@ class Honeypot:
         ret_response = None
         
         path = f"/{path}"
-
+        if " " in path:
+            path = path.replace(" ", "%20")
+            
         if path in self.answerset["endpoints"].keys():
             
             if list(args.keys()) != []:
-                content["args"] = dict(args.deepcopy())
-                content["endpoint"] = path
-                content["content"] = content 
-                self.logger.log(event_id="api.honeypot.args", content=args, ip=ip, port=port)
+                log_content = {}
+                log_content["args"] = dict(args.deepcopy())
+                log_content["endpoint"] = path
+                log_content["content"] = content 
+                self.logger.log(event_id="api.honeypot.args", content=log_content, ip=ip, port=port)
             
             answer_dict = self.answerset["endpoints"][path]
             self.logger.info(message=f"Endpoint: {path} was reached", method="api.honeypot.endpoint", ip=ip, port=port)
@@ -92,12 +95,13 @@ class Honeypot:
         ret_response = flask.Response()
 
         self.logger.log(event_id='api.honeypot.static_endpoint', content=answer_dict, ip=ip, port=port)
+        try:
+            ret_response.response = open(answer_dict['path'], "r").read()
 
-        ret_response.response = open(answer_dict['path']).read()
-
-        if answer_dict.get('gzip', False):
-            ret_response.data = gzip.compress(data=open(answer_dict['path'],'rb').read())
-
+            if answer_dict.get('gzip', False):
+                ret_response.data = gzip.compress(data=open(answer_dict['path'],'rb').read())
+        except Exception:
+            ret_response = flask.send_file(answer_dict['path'], mimetype=answer_dict["headers"].get("Content-Type", "text/html"))
         return ret_response
     
 
@@ -119,6 +123,7 @@ class Honeypot:
                 processed_dict[placeholder] = get_own_ip(api_list=["https://api.seeip.org/","https://api.ipify.org/"], logger=self.logger)
             else:
                 processed_dict[placeholder] = self._create_value_from_regex(value)
+
         try:
             with open(endpoint_path, 'r') as file:
                 content = file.read()
