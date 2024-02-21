@@ -129,7 +129,7 @@ class Honeypot:
             with open(endpoint_path, 'w') as file:
                 file.write(content)
         except Exception as e:
-            self.logger.warn(message=f"Error while replacing placeholders in {endpoint_path}", method="api.honeypot._randomize_endpoint", exception=e)
+            self.logger.warn(message=f"Error while replacing placeholders in {endpoint_path}", method="api.honeypot._randomize_endpoint")
 
 
     def _create_value_from_regex(self, regex:str)->str:
