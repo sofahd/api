@@ -22,7 +22,7 @@ RUN apk --no-cache -U add \
     flask \
     wheel \
     requests \
-    waitress \
+    pyuwsgi \
     exrex && \
     addgroup -g 2000 api && \
     adduser -S -s /bin/ash -u 2000 -D -g 2000 api && \
@@ -33,4 +33,4 @@ RUN apk --no-cache -U add \
 WORKDIR /home/api
 USER api:api
 
-CMD waitress-serve --port=50005 api:app
+CMD uwsgi --http 0.0.0.0:50005 --http-keepalive=1 --master -p 1 -w api:app
