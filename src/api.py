@@ -9,7 +9,7 @@ logger = SofahLogger(url=os.getenv('LOG_API', ''), dst_port=os.getenv('EXR_PORT'
 honeypot = Honeypot(logger=logger, answerset_path="/home/api/answerset/answerset.json")
 
 @app.route('/', defaults={'path': ''})
-@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD', 'CONNECT', 'TRACE'])
 def catch_all(path):
 
     content = request.data.decode('utf-8')
