@@ -53,11 +53,11 @@ class Honeypot:
                 log_content = {}
                 log_content["args"] = dict(args.deepcopy())
                 log_content["endpoint"] = path
-                log_content["content"] = content 
                 self.logger.log(event_id="api.honeypot.args", content=log_content, ip=ip, port=port)
             
             answer_dict = self.answerset["endpoints"][path]
-            self.logger.info(message=f"Endpoint: {path} was reached", method="api.honeypot.endpoint", ip=ip, port=port)
+            log_content = {"endpoint": path, "type": http_method, "content": content, "message": f"Endpoint: {path} was reached!"}
+            self.logger.log(event_id="api.honeypot.endpoint", content=log_content, ip=ip, port=port)
             ret_response = self.serve_static_endpoint(answer_dict=answer_dict, ip=ip, port=port)
         
         elif (not ("favicon" in path or "ico" in path)) and self.answerset.get("default_endpoint") is not None: 
@@ -103,8 +103,7 @@ class Honeypot:
         except Exception:
             ret_response = flask.send_file(answer_dict['path'], mimetype=answer_dict["headers"].get("Content-Type", "text/html"))
         return ret_response
-    
-
+        
     def _randomize_endpoint(self, endpoint_path:str, placeholder_dict:dict):
         """
         This method can be used to replace placeholders in the answer files of the endpoints with the randomized values.
