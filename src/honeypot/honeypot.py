@@ -1,6 +1,6 @@
 from sofahutils import SofahLogger, get_own_ip
 from honeypot.utils import load_json_file_to_dict
-import flask, gzip, exrex
+import flask, gzip, exrex, subprocess
 
 
 class Honeypot:
@@ -56,9 +56,13 @@ class Honeypot:
                 self.logger.log(event_id="api.honeypot.args", content=log_content, ip=ip, port=port)
             
             answer_dict = self.answerset["endpoints"][path]
-            log_content = {"endpoint": path, "type": http_method, "content": content, "message": f"Endpoint: {path} was reached!"}
-            self.logger.log(event_id="api.honeypot.endpoint", content=log_content, ip=ip, port=port)
-            ret_response = self.serve_static_endpoint(answer_dict=answer_dict, ip=ip, port=port)
+            
+            if answer_dict.get("type") == "content_sensitive":
+                ret_response = self.serve_content_sensitive_endpoint(answer_dict=answer_dict, ip=ip, port=port, path=path, content=content)
+            else:            
+                log_content = {"endpoint": path, "type": http_method, "content": content, "message": f"Endpoint: {path} was reached!"}
+                self.logger.log(event_id="api.honeypot.endpoint", content=log_content, ip=ip, port=port)
+                ret_response = self.serve_static_endpoint(answer_dict=answer_dict, ip=ip, port=port)
         
         elif (not ("favicon" in path or "ico" in path)) and self.answerset.get("default_endpoint") is not None: 
             log_dict = {
@@ -103,7 +107,56 @@ class Honeypot:
         except Exception:
             ret_response = flask.send_file(answer_dict['path'], mimetype=answer_dict["headers"].get("Content-Type", "text/html"))
         return ret_response
+    
+    def serve_content_sensitive_endpoint(self, answer_dict:dict, ip:str, port:int, content:str, path:str)->flask.Response:
+        """
+        This is a quick fix, for serving content sensitive endpoints.
+        """
         
+        content_answer = None
+        content_answer_dict = answer_dict.get("content_answers", {})
+        
+        for answer in content_answer_dict.keys():
+            if answer in content:
+                content_answer = content_answer_dict[answer]
+
+        if content_answer is None:
+            log_content = { "message": "No content answer found for the given content", "content": content, "endpoint": path} 
+            self.logger.warn(event_id="api.honeypot.no_content_answer", content=log_content, ip=ip, port=port)
+            return flask.Response(status=404)
+
+        elif content_answer.get("type") == "static":
+            return self.serve_static_endpoint(answer_dict=content_answer, ip=ip, port=port)
+    
+        elif content_answer.get("type") == "checkpoint":
+            return self.serve_checkpoint_endpoint(answer_dict=content_answer, ip=ip, port=port, content=content, path=path)
+        
+
+    def serve_checkpoint_endpoint(self, answer_dict:dict, ip:str, port:int, content:str, path:str)->flask.Response:
+        """
+        This is a quicly hacked out method to serve the checkpoint endpoints.
+        """
+
+        ret_response = flask.Response()
+        file_path = content.replace("aCSHELL/../../../../../../..", "")
+
+        content_respose = subprocess.run(f"cat {file_path}",shell=True, capture_output=True)
+        
+        ret_response.status=200
+        ret_response.mimetype="text/html"
+        
+        
+        if content_respose.returncode != 0:
+            self.log.warn(message=f"Error while trying to read the file: {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
+            ret_response.response="Broken pipe"
+            
+        else:
+            ret_response.response = content_respose.stdout.decode("utf-8")
+
+        return ret_response
+
+
+
     def _randomize_endpoint(self, endpoint_path:str, placeholder_dict:dict):
         """
         This method can be used to replace placeholders in the answer files of the endpoints with the randomized values.
