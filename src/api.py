@@ -11,7 +11,7 @@ honeypot = Honeypot(logger=logger, answerset_path="/home/api/answerset/answerset
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD', 'CONNECT', 'TRACE'])
 def catch_all(path):
-
+    request.get_data()
     content = request.data.decode('utf-8')
     
     resp = honeypot.endpoint(path=path, args=request.args, content=content, http_method=request.method, ip=request.remote_addr, port=request.environ.get('REMOTE_PORT'))
