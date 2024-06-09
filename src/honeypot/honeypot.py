@@ -122,7 +122,7 @@ class Honeypot:
 
         if content_answer is None:
             log_content = { "message": "No content answer found for the given content", "content": content, "endpoint": path} 
-            self.logger.warn(method="api.honeypot.no_content_answer", content=log_content, ip=ip, port=port)
+            self.logger.log(event_id="api.honeypot.no_content_answer", content=log_content, ip=ip, port=port)
             return flask.Response(status=404)
 
         elif content_answer.get("type") == "static":
