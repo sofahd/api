@@ -17,6 +17,7 @@ RUN apk --no-cache -U add \
     python3 \
     py3-pip \
     git \
+    curl \
     python3-dev && \
     pip3 install setuptools \ 
     flask \
@@ -24,13 +25,9 @@ RUN apk --no-cache -U add \
     requests \
     pyuwsgi \
     exrex && \
-    addgroup -g 2000 api && \
-    adduser -S -s /bin/ash -u 2000 -D -g 2000 api && \
     mkdir /home/api/answerset && \
-    chown api:api -R /home/api/* && \
     pip3 install git+https://$TOKEN:x-oauth-basic@github.com/sofahd/sofahutils.git
 
 WORKDIR /home/api
-USER api:api
 
 CMD uwsgi --http 0.0.0.0:50005 --http-keepalive=1 --master -p 1 -w api:app
