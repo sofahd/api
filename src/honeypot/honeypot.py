@@ -112,7 +112,6 @@ class Honeypot:
         """
         This is a quick fix, for serving content sensitive endpoints.
         """
-        
         content_answer = None
         content_answer_dict = answer_dict.get("content_answers", {})
         
@@ -122,7 +121,7 @@ class Honeypot:
 
         if content_answer is None:
             log_content = { "message": "No content answer found for the given content", "content": content, "endpoint": path} 
-            self.logger.log(event_id="api.honeypot.no_content_answer", content=log_content, ip=ip, port=port)
+            self.logger.log(event_id="serve_content_sensitive_endpoint.no_content_answer", content=log_content, ip=ip, port=port)
             return flask.Response(status=404)
 
         elif content_answer.get("type") == "static":
@@ -139,7 +138,6 @@ class Honeypot:
 
         ret_response = flask.Response()
         file_path = content.replace("aCSHELL/../../../../../../..", "")
-
         ret_response.status=200
         ret_response.mimetype="text/html"
 
@@ -147,14 +145,14 @@ class Honeypot:
             content_respose = subprocess.run(f"cat {file_path}",shell=True, capture_output=True)
         
             if content_respose.returncode != 0:
-                self.log.warn(message=f"Error while trying to read the file: {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
+                self.logger.warn(message=f"Error while trying to read the file: {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
                 ret_response.response="Broken pipe"
                 
             else:
                 ret_response.response = content_respose.stdout.decode("utf-8")
                 
         else:
-            self.log.warn(message=f"forbidden char in path {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
+            self.logger.warn(message=f"forbidden char in path {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
             ret_response.response="Broken pipe"
   
         
