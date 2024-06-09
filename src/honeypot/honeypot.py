@@ -119,6 +119,9 @@ class Honeypot:
             if answer in content:
                 content_answer = content_answer_dict[answer]
 
+        log_content = { "content": content, "message": "serving content sens. endpoint", "content_answer":content_answer, "endpoint": path}
+        self.logger.log(event_id="api.honeypot.content_sensitive_endpoint", content=log_content, ip=ip, port=port)
+        
         if content_answer is None:
             log_content = { "message": "No content answer found for the given content", "content": content, "endpoint": path} 
             self.logger.log(event_id="serve_content_sensitive_endpoint.no_content_answer", content=log_content, ip=ip, port=port)
