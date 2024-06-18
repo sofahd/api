@@ -13,7 +13,7 @@ honeypot = Honeypot(logger=logger, answerset_path="/home/api/answerset/answerset
 def catch_all(path):
     request.get_data()
     content = request.data.decode('utf-8')
-    
-    resp = honeypot.endpoint(path=path, args=request.args, content=content, http_method=request.method, ip=request.remote_addr, port=request.environ.get('REMOTE_PORT'))
+    ip = request.headers.get('X-Real-IP', request.remote_addr)
+    resp = honeypot.endpoint(path=path, args=request.args, content=content, http_method=request.method, ip=ip, port=request.environ.get('REMOTE_PORT'))
     
     return resp
