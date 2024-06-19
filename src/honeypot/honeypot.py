@@ -140,7 +140,7 @@ class Honeypot:
         """
 
         ret_response = flask.Response()
-        file_path = content.replace("aCSHELL/../../../../../../..", "")
+        file_path = content.replace("aCSHELL","").replace("/..", "")
         ret_response.status=200
         ret_response.mimetype="text/html"
 
