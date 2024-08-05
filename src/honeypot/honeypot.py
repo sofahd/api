@@ -106,6 +106,7 @@ class Honeypot:
                 ret_response.data = gzip.compress(data=open(answer_dict['path'],'rb').read())
         except Exception:
             ret_response = flask.send_file(answer_dict['path'], mimetype=answer_dict["headers"].get("Content-Type", "text/html"))
+        ret_response.status = answer_dict.get("status_code", 200)
         return ret_response
     
     def serve_content_sensitive_endpoint(self, answer_dict:dict, ip:str, port:int, content:str, path:str)->flask.Response:
