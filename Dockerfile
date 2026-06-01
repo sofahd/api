@@ -1,6 +1,5 @@
 FROM alpine:3.17
 # Define build-time variables
-ARG TOKEN
 ARG LOG_API
 ARG EXT_PORT
 
@@ -29,7 +28,7 @@ RUN apk --no-cache -U add \
     pyuwsgi \
     exrex && \
     mkdir /home/api/answerset && \
-    pip3 install git+https://$TOKEN:x-oauth-basic@github.com/sofahd/sofahutils.git && \
+    pip3 install git+https://github.com/sofahd/sofahutils.git && \
     chown api:api -R /home/api
 
 WORKDIR /home/api
