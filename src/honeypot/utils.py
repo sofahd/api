@@ -4,7 +4,7 @@ In this file some utility functions are defined that are used in the honeypot.
 
 import os, json
 from typing import Union
-from honeypot.exceptions import PathIsNoFileException, WrongFileTypeException
+from sofahutils import PathIsNoFileException, WrongFileTypeException
 
 def validate_path_and_extension(path:str, extension:str):
         """
