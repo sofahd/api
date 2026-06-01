@@ -1,6 +1,11 @@
 from sofahutils import SofahLogger, get_own_ip
 from honeypot.utils import load_json_file_to_dict
-import flask, gzip, exrex, subprocess
+import flask, gzip, exrex, os
+
+# Root of the fake filesystem served by the emulated CVE-2024-24919 file-read endpoint.
+# Attacker-supplied paths are resolved strictly inside this tree (see
+# serve_checkpoint_endpoint), so the emulation never touches the host filesystem.
+SANDBOX_ROOT = "/home/api/sandbox"
 
 
 class Honeypot:
@@ -137,29 +142,36 @@ class Honeypot:
 
     def serve_checkpoint_endpoint(self, answer_dict:dict, ip:str, port:int, content:str, path:str)->flask.Response:
         """
-        This is a quicly hacked out method to serve the checkpoint endpoints.
+        Serve the emulated CVE-2024-24919 (Check Point) arbitrary-file-read endpoint.
+
+        The attacker-supplied path is resolved **inside a sandboxed fake filesystem**
+        (`SANDBOX_ROOT`), never against the host and never through a shell. Path-traversal
+        segments are dropped and a realpath prefix check rejects anything that still escapes,
+        so a payload like `aCSHELL/../../../etc/shadow` returns the planted fake `etc/shadow`
+        rather than the real one. Shell metacharacters (`$(...)`, backticks, `;`, newlines)
+        are inert because no process is ever spawned.
         """
 
         ret_response = flask.Response()
-        file_path = content.replace("aCSHELL","").replace("/..", "")
-        ret_response.status=200
-        ret_response.mimetype="text/html"
+        ret_response.status = 200
+        ret_response.mimetype = "text/html"
 
-        if not ("&" in file_path or "|" in file_path or ";" in file_path):
-            content_respose = subprocess.run(f"cat {file_path}",shell=True, capture_output=True)
-        
-            if content_respose.returncode != 0:
-                self.logger.warn(message=f"Error while trying to read the file: {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
-                ret_response.response="Broken pipe"
-                
+        requested = content.replace("aCSHELL", "")
+        self.logger.log(event_id="api.honeypot.checkpoint_attempt", content={"requested_path": requested, "endpoint": path}, ip=ip, port=port)
+
+        # Drop '', '.' and '..' segments so the join can only ever resolve INSIDE the sandbox.
+        parts = [segment for segment in requested.split("/") if segment not in ("", ".", "..")]
+        target = os.path.realpath(os.path.join(SANDBOX_ROOT, *parts)) if parts else SANDBOX_ROOT
+
+        if target == SANDBOX_ROOT or target.startswith(SANDBOX_ROOT + os.sep):
+            if os.path.isfile(target):
+                with open(target, "r", errors="replace") as handle:
+                    ret_response.response = handle.read()
             else:
-                ret_response.response = content_respose.stdout.decode("utf-8")
-                
+                ret_response.response = "Broken pipe"
         else:
-            self.logger.warn(message=f"forbidden char in path {file_path}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
-            ret_response.response="Broken pipe"
-  
-        
+            self.logger.warn(message=f"checkpoint traversal blocked for path: {requested}", method="api.honeypot.serve_checkpoint_endpoint", ip=ip, port=port)
+            ret_response.response = "Broken pipe"
 
         return ret_response
 

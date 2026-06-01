@@ -11,6 +11,7 @@ ENV EXT_PORT=${EXT_PORT}
 # Copy files
 COPY ./src /home/api/
 COPY ./data/files /home/api/files
+COPY ./data/sandbox /home/api/sandbox
 
 # Update apt repository and install dependencies
 RUN apk --no-cache -U add \
